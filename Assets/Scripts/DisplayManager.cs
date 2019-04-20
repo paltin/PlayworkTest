@@ -2,24 +2,51 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UniRx;
-using UniRx.Triggers;
+
 
 public class DisplayManager : MonoBehaviour
-{
-    public Text clickCounterText;
+{    
+    public static DisplayManager Instance { get; private set; }
+    void OnEnable() { Instance = this; }
 
-    ReactiveProperty<int> testCounter = new ReactiveProperty<int>();
-    
-    void Start()
-    {
-        this.UpdateAsObservable()
-            .Where(_ => Input.GetMouseButton(0))
-            .ThrottleFirst(System.TimeSpan.FromMilliseconds(500))
-            .Subscribe(_ => testCounter.Value++);
+    public Text idxText;
+    public Slider slider;
+    public Button playButton;
+    public Button stopButton;
 
-        testCounter.SubscribeToText(clickCounterText, i => $"Click:{i}");
+    void Awake() {
+        playButton.gameObject.SetActive(false);
+        stopButton.gameObject.SetActive(false);
+        slider.gameObject.SetActive(false);
+        idxText.gameObject.SetActive(false);
     }
 
+    public void Init(int totalSamples) {
+        playButton.gameObject.SetActive(true);
+        GameManager.Instance.AddListenerToCounter(OnCounterChange);
+        GameManager.Instance.AddListenerToPlayButton(OnPlayButtonPressed);
+        GameManager.Instance.AddListenerToSimulationStateChange(OnSimulationStateChange);
+        slider.maxValue = totalSamples-1;
+    }
+
+    void OnCounterChange(int value) {
+        idxText.text = value.ToString();
+        slider.value = value;        
+    }
+
+    void OnPlayButtonPressed(bool isPaused) {
+        playButton.GetComponentInChildren<Text>().text = isPaused ? "Resume" : "Pause";
+    }
+
+    void OnSimulationStateChange(bool started) {
+        stopButton.gameObject.SetActive(started);
+        slider.gameObject.SetActive(started);
+        idxText.gameObject.SetActive(started);
+        if(!started)
+            playButton.GetComponentInChildren<Text>().text = "Start";
+    }
+
+    
+    
     
 }

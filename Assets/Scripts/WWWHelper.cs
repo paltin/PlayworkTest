@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.Events;
 
 public class WWWHelper : MonoBehaviour {
-
     public IEnumerator LoadTextFileFromStreamingAssets(string filename, UnityAction<string> callback) {
         string url = GetStreamingAssetsPath() + filename;
         using (WWW www = new WWW(url)){

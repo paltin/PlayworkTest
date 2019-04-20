@@ -25,6 +25,11 @@ public class GameManager : MonoBehaviour{
     }
 
 
+    public void OnStartButton() {
+        Debug.Log("Start pressed");
+        StartSimulation();
+    }
+
     void LoadData() {
         StartCoroutine(GetComponent<WWWHelper>().LoadTextFileFromStreamingAssets(inputDataFileName, OnDataLoaded));
     }
@@ -48,7 +53,7 @@ public class GameManager : MonoBehaviour{
             }
         }
 
-        StartSimulation();
+        //StartSimulation();
     }
 
     void PrintQuaternion(Quaternion q) {
@@ -57,7 +62,7 @@ public class GameManager : MonoBehaviour{
 
     
     void StartSimulation() {
-        if(ballRadius > 0f) {            
+        if(ballRadius > 0f && inputs.Count > 0) {            
             StartCoroutine(SimulationTimer(timeStep));                    
         } else
             Debug.LogError("Can't simulate, radius has negative value");

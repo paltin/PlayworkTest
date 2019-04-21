@@ -9,8 +9,13 @@ public class DeviceOrientationChangeDetector : MonoBehaviour
     public float portraitZ = -15f; 
 
     bool prevIsLandscapeOrientation;
-    
+
+    void Awake() {
+        enabled = Application.platform == RuntimePlatform.Android;        
+    }
+
     void Start(){
+        
         prevIsLandscapeOrientation = isLandscape;
         UpdateCamera();
     }

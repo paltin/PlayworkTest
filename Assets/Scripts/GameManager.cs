@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UniRx;
+using UniRx.Triggers;
 
 public class GameManager : MonoBehaviour{
     public string inputDataFileName;    
@@ -13,10 +14,12 @@ public class GameManager : MonoBehaviour{
     public bool isPlaying {get; private set;} 
     public bool isPaused{get; private set;}    
 
-    List<Quaternion> inputs;    
+    
     float ballRadius = -1f;        
     Coroutine timerCoroutine;
     Vector3 ballInitialPos;
+
+    List<Quaternion> inputs = new List<Quaternion>();    
 
     List<UnityAction<int>> counterListeners = new List<UnityAction<int>>();
     List<UnityAction<bool>> playButtonListeners = new List<UnityAction<bool>>();
@@ -39,25 +42,7 @@ public class GameManager : MonoBehaviour{
         simulattionStateListeners.Add(f);
     }
 
-    void Start(){
-        inputs = new List<Quaternion>();
-        LoadData();
-        if(ball != null){
-            ballRadius = ball.GetComponent<Renderer>().bounds.extents.x;  
-            ballInitialPos = ball.transform.position;
-        } 
-    }
-
-    void InitCounter() {
-        counter = new ReactiveProperty<int>();        
-        counter.Subscribe( i => OnCounterChange(i));                        
-    }
-        
-    void OnCounterChange(int value) {
-        ApplyInputData(value);        
-        foreach(var f in counterListeners)
-            f?.Invoke(value);
-    }
+    #region input handlers
 
     public void OnPlayButton() {                
         if(isPlaying)
@@ -75,6 +60,16 @@ public class GameManager : MonoBehaviour{
         ResetSimulation();        
         foreach(var f in simulattionStateListeners)
             f?.Invoke(false);            
+    }
+    #endregion
+
+    void Start(){        
+        LoadData();
+        if(ball != null){
+            ballRadius = ball.GetComponent<Renderer>().bounds.extents.x;  
+            ballInitialPos = ball.transform.position;
+        } 
+        InitQuitButtonListener();
     }
 
     void LoadData() {
@@ -103,6 +98,17 @@ public class GameManager : MonoBehaviour{
         DisplayManager.Instance.Init(inputs.Count);
     }
 
+    void InitCounter() {
+        counter = new ReactiveProperty<int>();        
+        counter.Subscribe( i => OnCounterChange(i));                        
+    }
+        
+    void OnCounterChange(int value) {
+        ApplyInputData(value);        
+        foreach(var f in counterListeners)
+            f?.Invoke(value);
+    }
+
     void ResetSimulation() {
         if(timerCoroutine != null)
             StopCoroutine(timerCoroutine);        
@@ -122,13 +128,13 @@ public class GameManager : MonoBehaviour{
             Debug.LogError("Can't simulate, radius has negative value");
     }
     
-    void Update(){
-        if (Input.GetKeyDown(KeyCode.Escape)) 
-            Application.Quit(); 
+    void InitQuitButtonListener() {
+        this.UpdateAsObservable()
+            .Where(_ => Input.GetKeyDown(KeyCode.Escape))
+            .Subscribe(_ => Application.Quit());
     }
 
-    IEnumerator SimulationTimer() {
-        
+    IEnumerator SimulationTimer() {        
         while(counter.Value < inputs.Count-1) {
             if(!isPaused)
                 counter.Value++;            
@@ -158,4 +164,5 @@ public class GameManager : MonoBehaviour{
     float AdjustAnlge(float a) {
         return a > 180f ? a - 360f : a;
     }
+    
 }
